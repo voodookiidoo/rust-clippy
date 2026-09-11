@@ -1,9 +1,11 @@
+use clippy_utils::consts::{ConstEvalCtxt, Constant};
 use clippy_utils::diagnostics::span_lint;
 use clippy_utils::res::MaybeDef as _;
 use clippy_utils::ty::implements_trait;
-use clippy_utils::{higher, sym};
-use rustc_hir::{BorrowKind, Closure, Expr, ExprKind};
-use rustc_lint::{LateContext, LateLintPass, declare_lint_pass};
+use clippy_utils::visitors::find_all_ret_expressions;
+use clippy_utils::{as_some_expr, higher, is_none_expr, sym};
+use rustc_hir::{Body, BorrowKind, Closure, Expr, ExprKind};
+use rustc_lint::{declare_lint_pass, LateContext, LateLintPass};
 use rustc_span::Symbol;
 
 declare_clippy_lint! {
@@ -115,45 +117,85 @@ enum Heuristic {
 
 use self::Heuristic::{All, Always, Any, First};
 
+/// An enum that represents a bound for finitness
+/// or other form of requierements, so it would be safe to say
+/// that a method or a function can be infinite or not
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+enum Cap {
+    Constant(Finiteness),
+    /// usize in ClosureTrue and ClosureSome is the index of the argument
+    /// that is requiered to be a closure always returning true/Some(_) respectively
+    ClosureTrue(usize),
+    ClosureSome(usize),
+}
+
 /// a slice of (method name, number of args, heuristic, bounds) tuples
 /// that will be used to determine whether the method in question
 /// returns an infinite or possibly infinite iterator. The finiteness
 /// is an upper bound, e.g., some methods can return a possibly
 /// infinite iterator at worst, e.g., `take_while`.
-const HEURISTICS: [(Symbol, usize, Heuristic, Finiteness); 19] = [
-    (sym::zip, 1, All, Infinite),
-    (sym::chain, 1, Any, Infinite),
-    (sym::cycle, 0, Always, Infinite),
-    (sym::map, 1, First, Infinite),
-    (sym::by_ref, 0, First, Infinite),
-    (sym::cloned, 0, First, Infinite),
-    (sym::rev, 0, First, Infinite),
-    (sym::inspect, 0, First, Infinite),
-    (sym::enumerate, 0, First, Infinite),
-    (sym::peekable, 1, First, Infinite),
-    (sym::fuse, 0, First, Infinite),
-    (sym::skip, 1, First, Infinite),
-    (sym::skip_while, 0, First, Infinite),
-    (sym::filter, 1, First, Infinite),
-    (sym::filter_map, 1, First, Infinite),
-    (sym::flat_map, 1, First, Infinite),
-    (sym::unzip, 0, First, Infinite),
-    (sym::take_while, 1, First, MaybeInfinite),
-    (sym::scan, 2, First, MaybeInfinite),
+const HEURISTICS: [(Symbol, usize, Heuristic, Cap); 20] = [
+    (sym::zip, 1, All, Cap::Constant(Infinite)),
+    (sym::chain, 1, Any, Cap::Constant(Infinite)),
+    (sym::cycle, 0, Always, Cap::Constant(Infinite)),
+    (sym::map, 1, First, Cap::Constant(Infinite)),
+    (sym::by_ref, 0, First, Cap::Constant(Infinite)),
+    (sym::cloned, 0, First, Cap::Constant(Infinite)),
+    (sym::rev, 0, First, Cap::Constant(Infinite)),
+    (sym::inspect, 0, First, Cap::Constant(Infinite)),
+    (sym::enumerate, 0, First, Cap::Constant(Infinite)),
+    (sym::peekable, 1, First, Cap::Constant(Infinite)),
+    (sym::fuse, 0, First, Cap::Constant(Infinite)),
+    (sym::skip, 1, First, Cap::Constant(Infinite)),
+    (sym::skip_while, 0, First, Cap::Constant(Infinite)),
+    (sym::filter, 1, First, Cap::Constant(Infinite)),
+    (sym::filter_map, 1, First, Cap::Constant(Infinite)),
+    (sym::flat_map, 1, First, Cap::Constant(Infinite)),
+    (sym::unzip, 0, First, Cap::Constant(Infinite)),
+    (sym::take_while, 1, First, Cap::ClosureTrue(0)),
+    (sym::scan, 2, First, Cap::ClosureSome(1)),
+    (sym::map_while, 1, First, Cap::ClosureSome(0)),
 ];
+
+fn closure_body_always_returns_true(cx: &LateContext<'_>, body: &Body) -> bool {
+    find_all_ret_expressions(cx, body.value, |e| {
+        matches!(ConstEvalCtxt::new(cx).eval(e), Some(Constant::Bool(true)))
+    })
+}
+
+fn closure_body_always_returns_some(cx: &LateContext<'_>, body: &Body) -> bool {
+    find_all_ret_expressions(cx, body.value, |ret_expr| as_some_expr(cx, ret_expr).is_some())
+}
 
 fn is_infinite(cx: &LateContext<'_>, expr: &Expr<'_>) -> Finiteness {
     match expr.kind {
         ExprKind::MethodCall(method, receiver, args, _) => {
             for &(name, len, heuristic, cap) in &HEURISTICS {
                 if method.ident.name == name && args.len() == len {
-                    return (match heuristic {
+                    let base = match heuristic {
                         Always => Infinite,
                         First => is_infinite(cx, receiver),
                         Any => is_infinite(cx, receiver).or(is_infinite(cx, &args[0])),
                         All => is_infinite(cx, receiver).and(is_infinite(cx, &args[0])),
-                    })
-                    .and(cap);
+                    };
+                    let term = match cap {
+                        Cap::Constant(c) => c,
+                        Cap::ClosureTrue(i) => {
+                            if expr_is_closure_always_returns_true(cx, &args[i]) {
+                                Infinite
+                            } else {
+                                MaybeInfinite
+                            }
+                        },
+                        Cap::ClosureSome(i) => {
+                            if expr_is_closure_always_returns_some(cx, &args[i]) {
+                                Infinite
+                            } else {
+                                MaybeInfinite
+                            }
+                        },
+                    };
+                    return base.and(term);
                 }
             }
             if method.ident.name == sym::flat_map
@@ -167,18 +209,61 @@ fn is_infinite(cx: &LateContext<'_>, expr: &Expr<'_>) -> Finiteness {
         },
         ExprKind::Block(block, _) => block.expr.as_ref().map_or(Finite, |e| is_infinite(cx, e)),
         ExprKind::AddrOf(BorrowKind::Ref, _, e) => is_infinite(cx, e),
-        ExprKind::Call(path, _) => {
+        ExprKind::Call(path, args) => {
             if let ExprKind::Path(ref qpath) = path.kind {
-                cx.qpath_res(qpath, path.hir_id)
-                    .opt_def_id()
-                    .is_some_and(|id| cx.tcx.is_diagnostic_item(sym::iter_repeat, id))
-                    .into()
+                if let Some(def_id) = cx.qpath_res(qpath, path.hir_id).opt_def_id() {
+                    if cx.tcx.is_diagnostic_item(sym::iter_repeat_with, def_id)
+                        || cx.tcx.is_diagnostic_item(sym::iter_repeat, def_id)
+                    {
+                        Infinite
+                    } else if cx.tcx.is_diagnostic_item(sym::iter_from_fn, def_id) {
+                        if let Some(e) = args.first()
+                            && expr_is_closure_always_returns_some(cx, e)
+                        {
+                            Infinite
+                        } else {
+                            MaybeInfinite
+                        }
+                    } else if cx.tcx.is_diagnostic_item(sym::iter_successors, def_id) {
+                        if let [seed, succ_func] = args {
+                            if is_none_expr(cx,seed) {
+                                Finite
+                            }else if expr_is_closure_always_returns_some(cx, succ_func){
+                                Infinite
+                            }else{
+                                MaybeInfinite
+                            }
+                        } else {
+                            Finite
+                        }
+                    } else {
+                        Finite
+                    }
+                } else {
+                    Finite
+                }
             } else {
                 Finite
             }
         },
         ExprKind::Struct(..) => higher::Range::hir(cx, expr).is_some_and(|r| r.end.is_none()).into(),
         _ => Finite,
+    }
+}
+
+fn expr_is_closure_always_returns_true(cx: &LateContext<'_>, expr: &Expr<'_>) -> bool {
+    if let ExprKind::Closure(Closure { body, .. }) = expr.kind {
+        closure_body_always_returns_true(cx, cx.tcx.hir_body(*body))
+    } else {
+        false
+    }
+}
+
+fn expr_is_closure_always_returns_some(cx: &LateContext<'_>, expr: &Expr<'_>) -> bool {
+    if let ExprKind::Closure(Closure { body, .. }) = expr.kind {
+        closure_body_always_returns_some(cx, cx.tcx.hir_body(*body))
+    } else {
+        false
     }
 }
 
