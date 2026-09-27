@@ -5,7 +5,7 @@ use clippy_utils::ty::implements_trait;
 use clippy_utils::visitors::find_all_ret_expressions;
 use clippy_utils::{as_some_expr, higher, is_none_expr, sym};
 use rustc_hir::{Body, BorrowKind, Closure, Expr, ExprKind};
-use rustc_lint::{declare_lint_pass, LateContext, LateLintPass};
+use rustc_lint::{LateContext, LateLintPass, declare_lint_pass};
 use rustc_span::Symbol;
 
 declare_clippy_lint! {
@@ -199,13 +199,14 @@ fn is_infinite(cx: &LateContext<'_>, expr: &Expr<'_>) -> Finiteness {
                 }
             }
             if method.ident.name == sym::flat_map
-                && args.len() == 1
-                && let ExprKind::Closure(&Closure { body, .. }) = args[0].kind
+                && let [single] = args
+                && let ExprKind::Closure(&Closure { body, .. }) = single.kind
             {
                 let body = cx.tcx.hir_body(body);
-                return is_infinite(cx, body.value);
+                is_infinite(cx, body.value)
+            } else {
+                Finite
             }
-            Finite
         },
         ExprKind::Block(block, _) => block.expr.as_ref().map_or(Finite, |e| is_infinite(cx, e)),
         ExprKind::AddrOf(BorrowKind::Ref, _, e) => is_infinite(cx, e),
@@ -215,6 +216,7 @@ fn is_infinite(cx: &LateContext<'_>, expr: &Expr<'_>) -> Finiteness {
                     if cx.tcx.is_diagnostic_item(sym::iter_repeat_with, def_id)
                         || cx.tcx.is_diagnostic_item(sym::iter_repeat, def_id)
                     {
+                        dbg!("AMOGUS");
                         Infinite
                     } else if cx.tcx.is_diagnostic_item(sym::iter_from_fn, def_id) {
                         if let Some(e) = args.first()
@@ -226,11 +228,11 @@ fn is_infinite(cx: &LateContext<'_>, expr: &Expr<'_>) -> Finiteness {
                         }
                     } else if cx.tcx.is_diagnostic_item(sym::iter_successors, def_id) {
                         if let [seed, succ_func] = args {
-                            if is_none_expr(cx,seed) {
+                            if is_none_expr(cx, seed) {
                                 Finite
-                            }else if expr_is_closure_always_returns_some(cx, succ_func){
+                            } else if expr_is_closure_always_returns_some(cx, succ_func) {
                                 Infinite
-                            }else{
+                            } else {
                                 MaybeInfinite
                             }
                         } else {

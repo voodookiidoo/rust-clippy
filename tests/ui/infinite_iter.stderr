@@ -1,3 +1,57 @@
+[clippy_lints/src/infinite_iter.rs:214:13] expr = Expr {
+    hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).7),
+    kind: Call(
+        Expr {
+            hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).8),
+            kind: Path(
+                Resolved(
+                    None,
+                    Path {
+                        span: tests/ui/infinite_iter.rs:9:5: 9:11 (#0),
+                        res: Def(
+                            Fn,
+                            DefId(2:10662 ~ core[a660]::iter::sources::repeat::repeat),
+                        ),
+                        segments: [
+                            PathSegment {
+                                ident: repeat#0,
+                                hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).9),
+                                res: Def(
+                                    Fn,
+                                    DefId(2:10662 ~ core[a660]::iter::sources::repeat::repeat),
+                                ),
+                                args: None,
+                                infer_args: true,
+                                delegation_child_segment: false,
+                            },
+                        ],
+                    },
+                ),
+            ),
+            span: tests/ui/infinite_iter.rs:9:5: 9:11 (#0),
+        },
+        [
+            Expr {
+                hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).10),
+                kind: Lit(
+                    Spanned {
+                        node: Int(
+                            Pu128(
+                                0,
+                            ),
+                            Unsigned(
+                                u8,
+                            ),
+                        ),
+                        span: tests/ui/infinite_iter.rs:9:12: 9:16 (#0),
+                    },
+                ),
+                span: tests/ui/infinite_iter.rs:9:12: 9:16 (#0),
+            },
+        ],
+    ),
+    span: tests/ui/infinite_iter.rs:9:5: 9:17 (#0),
+}
 error: infinite iteration detected
   --> tests/ui/infinite_iter.rs:9:5
    |
@@ -45,29 +99,170 @@ error: infinite iteration detected
 LL |     (0_u64..).filter(|x| x.is_multiple_of(2)).last();
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: possible infinite iteration detected
-  --> tests/ui/infinite_iter.rs:51:5
-   |
-LL |     (0..).zip((0..).take_while(square_is_lower_64)).count();
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-note: the lint level is defined here
-  --> tests/ui/infinite_iter.rs:48:8
-   |
-LL | #[deny(clippy::maybe_infinite_iter)]
-   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-error: possible infinite iteration detected
-  --> tests/ui/infinite_iter.rs:55:5
-   |
-LL |     repeat(42).take_while(|x| *x == 42).chain(0..42).max();
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-error: possible infinite iteration detected
-  --> tests/ui/infinite_iter.rs:59:5
+[clippy_lints/src/infinite_iter.rs:214:13] expr = Expr {
+    hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).204),
+    kind: Call(
+        Expr {
+            hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).205),
+            kind: Path(
+                Resolved(
+                    None,
+                    Path {
+                        span: tests/ui/infinite_iter.rs:42:5: 42:16 (#0),
+                        res: Def(
+                            Fn,
+                            DefId(2:10738 ~ core[a660]::iter::sources::repeat_with::repeat_with),
+                        ),
+                        segments: [
+                            PathSegment {
+                                ident: repeat_with#0,
+                                hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).206),
+                                res: Def(
+                                    Fn,
+                                    DefId(2:10738 ~ core[a660]::iter::sources::repeat_with::repeat_with),
+                                ),
+                                args: None,
+                                infer_args: true,
+                                delegation_child_segment: false,
+                            },
+                        ],
+                    },
+                ),
+            ),
+            span: tests/ui/infinite_iter.rs:42:5: 42:16 (#0),
+        },
+        [
+            Expr {
+                hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).207),
+                kind: Closure(
+                    Closure {
+                        def_id: DefId(0:14 ~ infinite_iter[1ffb]::infinite_iters::{closure#6}),
+                        binder: Default,
+                        constness: NotConst,
+                        capture_clause: Ref,
+                        bound_generic_params: [],
+                        fn_decl: FnDecl {
+                            inputs: [],
+                            output: DefaultReturn(
+                                tests/ui/infinite_iter.rs:42:19: 42:19 (#0),
+                            ),
+                            fn_decl_kind: FnDeclFlags(
+                                "ImplicitSelfKind(None)",
+                                "NoLifetimeElision",
+                            ),
+                        },
+                        body: BodyId {
+                            hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).208),
+                        },
+                        fn_decl_span: tests/ui/infinite_iter.rs:42:17: 42:19 (#0),
+                        fn_arg_span: Some(
+                            tests/ui/infinite_iter.rs:42:17: 42:19 (#0),
+                        ),
+                        kind: Closure,
+                        explicit_captures: [],
+                    },
+                ),
+                span: tests/ui/infinite_iter.rs:42:17: 42:28 (#0),
+            },
+        ],
+    ),
+    span: tests/ui/infinite_iter.rs:42:5: 42:29 (#0),
+}
+[clippy_lints/src/infinite_iter.rs:214:13] expr = Expr {
+    hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).215),
+    kind: Call(
+        Expr {
+            hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).216),
+            kind: Path(
+                Resolved(
+                    None,
+                    Path {
+                        span: tests/ui/infinite_iter.rs:45:5: 45:23 (#0),
+                        res: Def(
+                            Fn,
+                            DefId(2:10592 ~ core[a660]::iter::sources::from_fn::from_fn),
+                        ),
+                        segments: [
+                            PathSegment {
+                                ident: std#0,
+                                hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).217),
+                                res: Def(
+                                    Mod,
+                                    DefId(1:0 ~ std[c52f]),
+                                ),
+                                args: None,
+                                infer_args: true,
+                                delegation_child_segment: false,
+                            },
+                            PathSegment {
+                                ident: iter#0,
+                                hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).218),
+                                res: Def(
+                                    Mod,
+                                    DefId(2:7836 ~ core[a660]::iter),
+                                ),
+                                args: None,
+                                infer_args: true,
+                                delegation_child_segment: false,
+                            },
+                            PathSegment {
+                                ident: from_fn#0,
+                                hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).219),
+                                res: Def(
+                                    Fn,
+                                    DefId(2:10592 ~ core[a660]::iter::sources::from_fn::from_fn),
+                                ),
+                                args: None,
+                                infer_args: true,
+                                delegation_child_segment: false,
+                            },
+                        ],
+                    },
+                ),
+            ),
+            span: tests/ui/infinite_iter.rs:45:5: 45:23 (#0),
+        },
+        [
+            Expr {
+                hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).220),
+                kind: Closure(
+                    Closure {
+                        def_id: DefId(0:15 ~ infinite_iter[1ffb]::infinite_iters::{closure#7}),
+                        binder: Default,
+                        constness: NotConst,
+                        capture_clause: Ref,
+                        bound_generic_params: [],
+                        fn_decl: FnDecl {
+                            inputs: [],
+                            output: DefaultReturn(
+                                tests/ui/infinite_iter.rs:45:26: 45:26 (#0),
+                            ),
+                            fn_decl_kind: FnDeclFlags(
+                                "ImplicitSelfKind(None)",
+                                "NoLifetimeElision",
+                            ),
+                        },
+                        body: BodyId {
+                            hir_id: HirId(DefId(0:7 ~ infinite_iter[1ffb]::infinite_iters).221),
+                        },
+                        fn_decl_span: tests/ui/infinite_iter.rs:45:24: 45:26 (#0),
+                        fn_arg_span: Some(
+                            tests/ui/infinite_iter.rs:45:24: 45:26 (#0),
+                        ),
+                        kind: Closure,
+                        explicit_captures: [],
+                    },
+                ),
+                span: tests/ui/infinite_iter.rs:45:24: 52:6 (#0),
+            },
+        ],
+    ),
+    span: tests/ui/infinite_iter.rs:45:5: 52:7 (#0),
+}
+error: infinite iteration detected
+  --> tests/ui/infinite_iter.rs:57:5
    |
 LL | /     (1..)
-LL | |
 LL | |         .scan(0, |state, x| {
 LL | |             *state += x;
 LL | |             Some(*state)
@@ -76,31 +271,101 @@ LL | |         .min();
    | |______________^
 
 error: possible infinite iteration detected
-  --> tests/ui/infinite_iter.rs:67:5
+  --> tests/ui/infinite_iter.rs:74:5
+   |
+LL |     (0..).zip((0..).take_while(square_is_lower_64)).count();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+note: the lint level is defined here
+  --> tests/ui/infinite_iter.rs:71:8
+   |
+LL | #[deny(clippy::maybe_infinite_iter)]
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[clippy_lints/src/infinite_iter.rs:214:13] expr = Expr {
+    hir_id: HirId(DefId(0:17 ~ infinite_iter[1ffb]::potential_infinite_iters).25),
+    kind: Call(
+        Expr {
+            hir_id: HirId(DefId(0:17 ~ infinite_iter[1ffb]::potential_infinite_iters).26),
+            kind: Path(
+                Resolved(
+                    None,
+                    Path {
+                        span: tests/ui/infinite_iter.rs:78:5: 78:11 (#0),
+                        res: Def(
+                            Fn,
+                            DefId(2:10662 ~ core[a660]::iter::sources::repeat::repeat),
+                        ),
+                        segments: [
+                            PathSegment {
+                                ident: repeat#0,
+                                hir_id: HirId(DefId(0:17 ~ infinite_iter[1ffb]::potential_infinite_iters).27),
+                                res: Def(
+                                    Fn,
+                                    DefId(2:10662 ~ core[a660]::iter::sources::repeat::repeat),
+                                ),
+                                args: None,
+                                infer_args: true,
+                                delegation_child_segment: false,
+                            },
+                        ],
+                    },
+                ),
+            ),
+            span: tests/ui/infinite_iter.rs:78:5: 78:11 (#0),
+        },
+        [
+            Expr {
+                hir_id: HirId(DefId(0:17 ~ infinite_iter[1ffb]::potential_infinite_iters).28),
+                kind: Lit(
+                    Spanned {
+                        node: Int(
+                            Pu128(
+                                42,
+                            ),
+                            Unsuffixed,
+                        ),
+                        span: tests/ui/infinite_iter.rs:78:12: 78:14 (#0),
+                    },
+                ),
+                span: tests/ui/infinite_iter.rs:78:12: 78:14 (#0),
+            },
+        ],
+    ),
+    span: tests/ui/infinite_iter.rs:78:5: 78:15 (#0),
+}
+error: possible infinite iteration detected
+  --> tests/ui/infinite_iter.rs:78:5
+   |
+LL |     repeat(42).take_while(|x| *x == 42).chain(0..42).max();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: possible infinite iteration detected
+  --> tests/ui/infinite_iter.rs:81:5
    |
 LL |     (0..).find(|x| *x == 24);
    |     ^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: possible infinite iteration detected
-  --> tests/ui/infinite_iter.rs:71:5
+  --> tests/ui/infinite_iter.rs:85:5
    |
 LL |     (0..).position(|x| x == 24);
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: possible infinite iteration detected
-  --> tests/ui/infinite_iter.rs:75:5
+  --> tests/ui/infinite_iter.rs:89:5
    |
 LL |     (0..).any(|x| x == 24);
    |     ^^^^^^^^^^^^^^^^^^^^^^
 
 error: possible infinite iteration detected
-  --> tests/ui/infinite_iter.rs:79:5
+  --> tests/ui/infinite_iter.rs:93:5
    |
 LL |     (0..).all(|x| x == 24);
    |     ^^^^^^^^^^^^^^^^^^^^^^
 
 error: infinite iteration detected
-  --> tests/ui/infinite_iter.rs:102:31
+  --> tests/ui/infinite_iter.rs:116:31
    |
 LL |         let _: HashSet<i32> = (0..).collect();
    |                               ^^^^^^^^^^^^^^^

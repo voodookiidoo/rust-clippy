@@ -1,4 +1,4 @@
-use std::iter::repeat;
+use std::iter::{repeat, repeat_with};
 fn square_is_lower_64(x: &u32) -> bool {
     x * x < 64
 }
@@ -39,6 +39,29 @@ fn infinite_iters() {
     (0_u64..).filter(|x| x.is_multiple_of(2)).last();
     //~^ infinite_iter
 
+    repeat_with(|| "amogus").collect::<Vec<_>>();
+    //~^ infinite_iter
+
+    std::iter::from_fn(|| {
+        let val = "hello";
+        match val {
+            "world" => Some(72),
+            "friend" => Some(74),
+            _ => Some(60),
+        }
+    })
+    .collect::<Vec<_>>();
+    //~^ infinite_iter
+
+    // infinite iter
+    (1..)
+        .scan(0, |state, x| {
+            *state += x;
+            Some(*state)
+        })
+        .min();
+    //~^ infinite_iter
+
     // not an infinite, because ranges are double-ended
     (0..42_u64).by_ref().last();
     // iterator is not exhausted
@@ -55,15 +78,6 @@ fn potential_infinite_iters() {
     repeat(42).take_while(|x| *x == 42).chain(0..42).max();
     //~^ maybe_infinite_iter
 
-    // maybe infinite iter
-    (1..)
-        //~^ maybe_infinite_iter
-        .scan(0, |state, x| {
-            *state += x;
-            Some(*state)
-        })
-        .min();
-    // maybe infinite iter
     (0..).find(|x| *x == 24);
     //~^ maybe_infinite_iter
 
